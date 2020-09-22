@@ -5,6 +5,51 @@ class Board:
     def __init__(self, board = [[0]]):
         self.board = board
         self.played_positions = []
+        if board != [[0]]:
+            self.played_positions = self.get_played_positions(board)
+
+    def get_played_positions(self, board):
+        played_positions = []
+        for row in range(len(board)):
+            for col in range(len(board[0])):
+                if board[row][col]:
+                    played_position = Position(row, col)
+                    played_positions.append(played_position)
+        return played_positions
+
+    def get_playable_positions(self):
+        playable_positions = []
+        for played_position in self.played_positions:
+            adjacent_empty_positions = self.get_adjacent_empty_positions(played_position)
+            playable_positions.extend(adjacent_empty_positions)
+        return playable_positions
+
+    def get_adjacent_empty_positions(self, position):
+        adjacent_empty_positions = []
+        row, col = position.row, position.col
+
+        # left empty position?
+        if col > 0 and not self.board[row][col - 1]:
+            adjacent_empty_positions.append(Position(row, col - 1))
+
+        # right empty position?
+        if col < len(self.board[0]) - 1 and not self.board[row][col + 1]:
+            adjacent_empty_positions.append(Position(row, col + 1))
+
+        # up empty position?
+        if row > 0 and not self.board[row - 1][col]:
+            adjacent_empty_positions.append(Position(row - 1, col))
+
+        rows = len(self.board)
+        # down empty position?
+        if row < len(self.board) - 1 and not self.board[row + 1][col]:
+            adjacent_empty_positions.append(Position(row + 1, col))
+
+        return adjacent_empty_positions
+
+    def play_tile(self, tile, position):
+        self.board[position.row][position.col] = tile
+        self.played_positions.append(position)
 
     def adjust_padding(self):
         top = first = 0
@@ -33,10 +78,8 @@ class Board:
                     self.board[i].append(0)
                 break;
 
-    def is_valid_move(self, tile, position):
+    def is_valid_move(self, tile, row, col):
         board = self.board
-        row = position.row
-        col = position.col
 
         if len(board[0]) == 1:
             valid_position = (row == 0 and col == 0)
@@ -81,7 +124,6 @@ class Board:
         # its a valid move, meets all rules
         return True
 
-
     def get_adjacent_horizontal_line(self, board, tile, row, col):
         horizontal_line = [tile]
 
@@ -114,7 +156,6 @@ class Board:
             row_index -= 1
         return vertical_line
 
-    @staticmethod
     def is_valid_line(self, line):
         # lines of 1 or 0 tiles are valid
         if len(line) <= 1:
