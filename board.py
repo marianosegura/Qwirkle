@@ -1,9 +1,10 @@
 from tile import Tile
+from position import Position
 
 class Board:
-    def __init__(self, board = [[]]):
+    def __init__(self, board = [[0]]):
         self.board = board
-        #self.plays = []
+        self.played_positions = []
 
     def adjust_padding(self):
         top = first = 0
@@ -32,17 +33,10 @@ class Board:
                     self.board[i].append(0)
                 break;
 
-    def __str__(self):
-        to_string = ""
-        for row in self.board:
-            to_string += str(row) + "\n"
-        return to_string
-
-    def __len__(self):
-        return len(self.board)
-
-    def is_valid_move(self, tile, row, col):
+    def is_valid_move(self, tile, position):
         board = self.board
+        row = position.row
+        col = position.col
 
         if len(board[0]) == 1:
             valid_position = (row == 0 and col == 0)
@@ -87,6 +81,7 @@ class Board:
         # its a valid move, meets all rules
         return True
 
+
     def get_adjacent_horizontal_line(self, board, tile, row, col):
         horizontal_line = [tile]
 
@@ -119,6 +114,7 @@ class Board:
             row_index -= 1
         return vertical_line
 
+    @staticmethod
     def is_valid_line(self, line):
         # lines of 1 or 0 tiles are valid
         if len(line) <= 1:
@@ -156,3 +152,12 @@ class Board:
             else:
                 seen_tiles.add(str(tile))
         return True
+
+    def __str__(self):
+        to_string = ""
+        for row in self.board:
+            to_string += str(row) + "\n"
+        return to_string
+
+    def __len__(self):
+        return len(self.board)
