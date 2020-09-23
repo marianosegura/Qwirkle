@@ -4,11 +4,28 @@ from tile import Tile
 import random
 
 class Bag:
+    """ Qwirkle bag of tiles.
+
+        Attributes:
+                row(int): Board row.
+                col(int): Board col.
+
+        """
     def __init__(self):
+        """ The constructor initializes the default bag.
+
+        """
         self.tiles = []
         self.set_default_bag()
 
     def set_default_bag(self):
+        """ Returns the default list of tiles. Consist of 3 sets of
+            all shapes and color combinations, 108 total.
+
+            Returns:
+                :obj:`list` of :obj:`Tile`: Default list of tiles.
+
+        """
         self.tiles = []
         for tile_copy in range(3):
             for shape in Shape:
@@ -17,27 +34,33 @@ class Bag:
                     self.tiles.append(tile)
         random.shuffle(self.tiles)
 
+    def draw(self):
+        """ Draws a tile from the bag.
+
+            Returns:
+                :obj:`Tile`: Drawn tile.
+
+        """
+        return self.tiles.pop()
+
     def discard(self, number):
+        """ Discards a number of tiles from the bag.
+
+            Args:
+                number(int): Number of tiles to discard.
+
+        """
         for discarded_tile in range(number):
             self.tiles.pop()
 
     def is_empty(self):
+        """ Indicates if the tile bag is empty.
+
+            Returns:
+                bool: True if the tile bag is empty, false otherwise.
+
+        """
         return len(self.tiles) == 0
-
-    # TODO: allow multiple draw? requested > available scenario
-    def draw(self, number = 1):
-        drawn_tiles = []
-        for tile in range(number):
-            if not self.is_empty():
-                drawn_tile = self.tiles.pop()
-                drawn_tiles.append(drawn_tile)
-        return drawn_tiles
-
-    def trade(self, player_tiles):
-        self.tiles.extend(player_tiles)
-        random.shuffle(self.tiles)
-        drawn_tiles = self.draw(len(player_tiles))
-        return drawn_tiles
 
     def __len__(self):
         return len(self.tiles)

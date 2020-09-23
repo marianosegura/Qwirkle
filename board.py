@@ -1,16 +1,40 @@
 from tile import Tile
 from position import Position
-from restriction_tile import RestrictionTile
+from restriction_tile import TileRestriction
 
 
 class Board:
+    """ The game board manages the state of the board and the played
+        positions.
+
+        Attributes:
+            board(:obj:`list` of :obj:`Tile`): Two-dimensional list of tiles or zeros.
+            played_positions(:obj:`list` of :obj:`Position`): List of the positions played.
+
+    """
+
     def __init__(self, board = [[0]]):
+        """ The constructor can receive a board. Default board is empty.
+
+            Args:
+                board(:obj:`list` of :obj:`Tile`): Two-dimensional list of tiles or zeros.
+
+        """
         self.board = board
         self.played_positions = []
         if board != [[0]]:
             self.played_positions = self.get_played_positions(board)
 
     def get_played_positions(self, board):
+        """ Returns all played positions in a board.
+
+            Args:
+                board(:obj:`list` of :obj:`Tile`): Two-dimensional list of tiles or zeros.
+
+            Returns:
+                :obj:`list` of :obj:`Position`: List of played  positions.
+
+        """
         played_positions = []
         for row in range(len(board)):
             for col in range(len(board[0])):
@@ -20,22 +44,32 @@ class Board:
         return played_positions
 
     def get_playable_positions(self, play_steps):
+        """ Returns all playable positions of the board, given the player
+            tile moves in the turn.
+
+            Args:
+                play_steps(:obj:`PlaySteps`): Tile movements made by a player.
+
+            Returns:
+                :obj:`list` of :obj:`Position`: List of playable  positions.
+
+        """
         restriction = None
         if len(play_steps) == 1:
-            restriction = RestrictionTile('same row or col')
+            restriction = TileRestriction('same row or col')
             restriction.row = play_steps.positions[0].row
             restriction.col = play_steps.positions[0].col
         if len(play_steps) >= 2:
             if play_steps.positions[0].row == play_steps.positions[1].row:
-                restriction = RestrictionTile('same row')
+                restriction = TileRestriction('same row')
                 restriction.row = play_steps.positions[0].row
             else:
-                restriction = RestrictionTile('same col')
+                restriction = TileRestriction('same col')
                 restriction.row = play_steps.positions[0].col
 
         playable_positions = []
         for played_position in self.played_positions:
-            adjacent_empty_positions = self.get_adjacent_empty_positions(played_position)
+            adjacent_empty_positions = self.get_adjacent_empty_positions(self.board, played_position)
             playable_positions.extend(adjacent_empty_positions)
 
         playable_positions = self.filter_positions(playable_positions, restriction)
@@ -43,6 +77,16 @@ class Board:
         return playable_positions
 
     def filter_positions(self, positions, tile_restriction):
+        """ Filters a list of positions based on a tile restriction.
+
+            Args:
+                positions(:obj:`list` of :obj:`Position`): List of positions to filter.
+                position(:obj:'TileRestriction'): Restriction reference to filter.
+
+            Returns:
+                :obj:`list` of :obj:`Position`: List of filtered positions.
+
+        """
         # not need to filter when restriction is None
         if not tile_restriction:
             return positions
@@ -64,7 +108,18 @@ class Board:
                 filtered_positions.append(position)
         return filtered_positions
 
-    def get_adjacent_empty_positions(self, position):
+    def get_adjacent_empty_positions(self, board, position):
+        """ Returns the empty positions adjacent to a position.
+            Looks up, down, right and left of the position.
+
+            Args:
+                board(:obj:`list` of :obj:`Tile`): Two-dimensional list of tiles or zeros.
+                position(:obj:'Position'): Board position of row and column.
+
+            Returns:
+                :obj:`list` of :obj:`Position`: List of adjacent empty positions.
+
+        """
         adjacent_empty_positions = []
         row, col = position.row, position.col
 
@@ -88,10 +143,23 @@ class Board:
         return adjacent_empty_positions
 
     def play_tile(self, tile, position):
+        """ Determines if a tile move if valid. Checks vertically and horizontally.
+
+            Args:
+                tile(:obj:'Tile'): Played tile.
+                position(:obj:'Position'): Board row and column to insert the tile.
+
+        """
         self.board[position.row][position.col] = tile
         self.played_positions.append(position)
 
     def adjust_padding(self):
+        """ Inserts padding to the board if needed. Is needed when a tile is in
+            at the most outer layer of the board (first or last column or row).
+            Void spaces are needed always at the outer layer to make be able to
+            make moves.
+
+        """
         top = first = 0
 
         # check top padding
@@ -119,6 +187,16 @@ class Board:
                 break;
 
     def is_valid_move(self, tile, position):
+        """ Determines if a tile move if valid. Checks vertically and horizontally.
+
+            Args:
+                tile(:obj:'Tile'): Tile used to know its shape and color.
+                position(:obj:'Position'): Board position of row and column.
+
+            Returns:
+                bool: True if the move is valid, false otherwise.
+
+        """
         board = self.board
         row = position.row
         col = position.col
@@ -167,6 +245,19 @@ class Board:
         return True
 
     def get_adjacent_horizontal_line(self, board, tile, row, col):
+        """ Returns the tiles linked vertically to a tile and its position.
+            Searches up and down from the given position.
+
+            Args:
+                board(:obj:`list` of :obj:`Tile`): Two-dimensional list of tiles or zeros.
+                tile(:obj:'Tile'): Reference tile to determine the adjacent tiles.
+                row(int): Board row to determine the adjacent tiles.
+                col(int): Board column to determine the adjacent tiles.
+
+            Returns:
+                :obj:`list` of :obj:`Tile`: List of tiles linked vertically to the tile.
+
+        """
         horizontal_line = [tile]
 
         # append right side
@@ -183,6 +274,19 @@ class Board:
         return horizontal_line
 
     def get_adjacent_vertical_line(self, board, tile, row, col):
+        """ Returns the tiles linked horizontally to a tile and its position.
+            Searches to the right and left from the given position
+
+            Args:
+                board(:obj:`list` of :obj:`Tile`): Two-dimensional list of tiles or zeros.
+                tile(:obj:'Tile'): Reference tile to determine the adjacent tiles.
+                row(int): Board row to determine the adjacent tiles.
+                col(int): Board column to determine the adjacent tiles.
+
+            Returns:
+                :obj:`list` of :obj:`Tile`: List of tiles linked horizontally to the tile.
+
+        """
         vertical_line = [tile]
 
         # append upper side
@@ -199,6 +303,16 @@ class Board:
         return vertical_line
 
     def is_valid_line(self, line):
+        """ Indicates if a line of tiles is valid. A line is valid when
+            all the tiles share either shape or color.
+
+            Args:
+                line(:obj:`list` of :obj:`Tile`): The first parameter.
+
+            Returns:
+                True if the line is valid, false otherwise.
+
+        """
         # lines of 1 or 0 tiles are valid
         if len(line) <= 1:
             return True

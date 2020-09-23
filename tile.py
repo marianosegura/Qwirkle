@@ -2,7 +2,21 @@ from shape import Shape
 from color import Color
 
 class Tile:
+    """ Qwirkle tile piece, with shape and color.
+
+        Attributes:
+            color(str): Tile color.
+            shape(str): Tile shpae.
+
+    """
     def __init__(self, color, shape):
+        """ The constructor receives all the attributes.
+
+            Args:
+                color(str): Tile color.
+                shape(str): Tile shpae.
+
+        """
         self.color = color
         self.shape = shape
 

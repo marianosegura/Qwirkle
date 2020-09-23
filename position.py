@@ -1,6 +1,21 @@
 
 class Position:
+    """ Representation of a board position.
+
+        Attributes:
+            row(int): Board row.
+            col(int): Board col.
+
+    """
+
     def __init__(self, row, col):
+        """ The constructor receives the two attributes.
+
+        Args:
+            row(int): Board row.
+            col(int): Board col.
+
+        """
         self.row = row
         self.col = col
 
