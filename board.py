@@ -1,5 +1,7 @@
 from tile import Tile
 from position import Position
+from restriction_tile import RestrictionTile
+
 
 class Board:
     def __init__(self, board = [[0]]):
@@ -17,12 +19,50 @@ class Board:
                     played_positions.append(played_position)
         return played_positions
 
-    def get_playable_positions(self):
+    def get_playable_positions(self, play_steps):
+        restriction = None
+        if len(play_steps) == 1:
+            restriction = RestrictionTile('same row or col')
+            restriction.row = play_steps.positions[0].row
+            restriction.col = play_steps.positions[0].col
+        if len(play_steps) >= 2:
+            if play_steps.positions[0].row == play_steps.positions[1].row:
+                restriction = RestrictionTile('same row')
+                restriction.row = play_steps.positions[0].row
+            else:
+                restriction = RestrictionTile('same col')
+                restriction.row = play_steps.positions[0].col
+
         playable_positions = []
         for played_position in self.played_positions:
             adjacent_empty_positions = self.get_adjacent_empty_positions(played_position)
             playable_positions.extend(adjacent_empty_positions)
+
+        playable_positions = self.filter_positions(playable_positions, restriction)
+
         return playable_positions
+
+    def filter_positions(self, positions, tile_restriction):
+        # not need to filter when restriction is None
+        if not tile_restriction:
+            return positions
+
+        restriction = tile_restriction.restriction
+
+        filtered_positions = []
+        for position in positions:
+            valid_tile = False
+
+            if restriction == 'same row':
+                valid_tile = (position.row == tile_restriction.row)
+            elif restriction == 'same col':
+                valid_tile = (position.col == tile_restriction.col)
+            elif restriction == 'same row or col':
+                valid_tile = (position.row == tile_restriction.row or position.col == tile_restriction.col)
+
+            if valid_tile:
+                filtered_positions.append(position)
+        return filtered_positions
 
     def get_adjacent_empty_positions(self, position):
         adjacent_empty_positions = []
@@ -78,8 +118,10 @@ class Board:
                     self.board[i].append(0)
                 break;
 
-    def is_valid_move(self, tile, row, col):
+    def is_valid_move(self, tile, position):
         board = self.board
+        row = position.row
+        col = position.col
 
         if len(board[0]) == 1:
             valid_position = (row == 0 and col == 0)
@@ -90,12 +132,12 @@ class Board:
 
         out_of_index = (row < 0) or (row >= rows) or (col < 0) or (col >= cols)
         if out_of_index:
-            print("out of index")
+            #print("out of index")
             return False
 
         space_taken = board[row][col]
         if space_taken:
-            print("space taken")
+            #print("space taken")
             return False
 
         # at least 1 adjacent tile?
@@ -104,21 +146,21 @@ class Board:
                         col != 0 and board[row][col - 1] or \
                         col != cols - 1 and board[row][col + 1]
         if not adjacent_tile:
-            print("no adjacent tile")
+            #print("no adjacent tile")
             return False
 
         # verify horizontal line
         horizontal_line = self.get_adjacent_horizontal_line(board, tile, row, col)
         if not self.is_valid_line(horizontal_line):
-            print("invalid horizontal line")
-            print(horizontal_line)
+            #print("invalid horizontal line")
+            #print(horizontal_line)
             return False
 
         # verify vertical line
         vertical_line = self.get_adjacent_vertical_line(board, tile, row, col)
         if not self.is_valid_line(vertical_line):
-            print("invalid vertical line")
-            print(vertical_line)
+            #print("invalid vertical line")
+            #print(vertical_line)
             return False
 
         # its a valid move, meets all rules
