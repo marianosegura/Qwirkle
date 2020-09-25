@@ -6,7 +6,7 @@ class Tile:
 
         Attributes:
             color(str): Tile color.
-            shape(str): Tile shpae.
+            shape(str): Tile shape.
 
     """
     def __init__(self, color, shape):
@@ -14,7 +14,7 @@ class Tile:
 
             Args:
                 color(str): Tile color.
-                shape(str): Tile shpae.
+                shape(str): Tile shape.
 
         """
         self.color = color
