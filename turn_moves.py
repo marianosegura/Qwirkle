@@ -1,5 +1,5 @@
 
-class PlaySteps:
+class TurnMoves:
     """ Tile moves done by a player in its turn. Keeps track
         of a list of tiles, played positions and points.
 
@@ -18,7 +18,7 @@ class PlaySteps:
         self.positions = []
         self.points = 0
 
-    def append(self, tile, position):
+    def add_move(self, tile, position):
         """ Appends a tile move to the attribute lists.
 
             Args:
@@ -29,7 +29,7 @@ class PlaySteps:
         self.tiles.append(tile)
         self.positions.append(position)
 
-    def pop(self):
+    def discard_last_move(self):
         """ Deletes the last tile move from the attribute lists.
 
         """
@@ -45,3 +45,6 @@ class PlaySteps:
             to_string += str(self.tiles[i]) + str(self.positions[i]) + ' -> '
         to_string = to_string[:-3] # remove last arrow pointing to nothing
         return to_string
+
+    def __repr__(self):
+        return self.__str__()
