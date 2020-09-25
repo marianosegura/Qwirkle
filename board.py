@@ -55,17 +55,16 @@ class Board:
 
         """
         restriction = None
-        if len(play_steps) == 1:
-            restriction = TileRestriction('same row or col')
-            restriction.row = play_steps.positions[0].row
-            restriction.col = play_steps.positions[0].col
-        if len(play_steps) >= 2:
-            if play_steps.positions[0].row == play_steps.positions[1].row:
-                restriction = TileRestriction('same row')
-                restriction.row = play_steps.positions[0].row
-            else:
-                restriction = TileRestriction('same col')
-                restriction.row = play_steps.positions[0].col
+        # if turn moves is not empty there are restrictions
+        if len(play_steps) >= 1:
+            first_tile_position = self.get_tile_position(play_steps.tiles[0])
+            if len(play_steps) == 1:
+                restriction = TileRestriction('same row or col', first_tile_position)
+            if len(play_steps) >= 2:
+                if play_steps.positions[0].row == play_steps.positions[1].row:
+                    restriction = TileRestriction('same row', first_tile_position)
+                else:
+                    restriction = TileRestriction('same col', first_tile_position)
 
         playable_positions = []
         for played_position in self.played_positions:
@@ -76,12 +75,27 @@ class Board:
 
         return playable_positions
 
+    def get_tile_position(self, tile):
+        """ Returns the position of a tile on the board.
+
+            Args:
+                tile(:obj:`Tile`): Tile to search.
+
+            Returns:
+                :obj:`Position`: Tile board position.
+
+        """
+        for position in self.played_positions:
+            if self.board[position.row][position.col] is tile:
+                return position
+        return None
+
     def filter_positions(self, positions, tile_restriction):
         """ Filters a list of positions based on a tile restriction.
 
             Args:
                 positions(:obj:`list` of :obj:`Position`): List of positions to filter.
-                position(:obj:'TileRestriction'): Restriction reference to filter.
+                tile_restriction(:obj:'TileRestriction'): Restriction reference to filter.
 
             Returns:
                 :obj:`list` of :obj:`Position`: List of filtered positions.
@@ -98,11 +112,11 @@ class Board:
             valid_tile = False
 
             if restriction == 'same row':
-                valid_tile = (position.row == tile_restriction.row)
+                valid_tile = (position.row == tile_restriction.position.row)
             elif restriction == 'same col':
-                valid_tile = (position.col == tile_restriction.col)
+                valid_tile = (position.col == tile_restriction.position.col)
             elif restriction == 'same row or col':
-                valid_tile = (position.row == tile_restriction.row or position.col == tile_restriction.col)
+                valid_tile = (position.row == tile_restriction.position.row or position.col == tile_restriction.position.col)
 
             if valid_tile:
                 filtered_positions.append(position)
@@ -124,20 +138,19 @@ class Board:
         row, col = position.row, position.col
 
         # left empty position?
-        if col > 0 and not self.board[row][col - 1]:
+        if col > 0 and not board[row][col - 1]:
             adjacent_empty_positions.append(Position(row, col - 1))
 
         # right empty position?
-        if col < len(self.board[0]) - 1 and not self.board[row][col + 1]:
+        if col < len(board[0]) - 1 and not board[row][col + 1]:
             adjacent_empty_positions.append(Position(row, col + 1))
 
         # up empty position?
-        if row > 0 and not self.board[row - 1][col]:
+        if row > 0 and not board[row - 1][col]:
             adjacent_empty_positions.append(Position(row - 1, col))
 
-        rows = len(self.board)
         # down empty position?
-        if row < len(self.board) - 1 and not self.board[row + 1][col]:
+        if row < len(board) - 1 and not board[row + 1][col]:
             adjacent_empty_positions.append(Position(row + 1, col))
 
         return adjacent_empty_positions
@@ -152,12 +165,15 @@ class Board:
         """
         self.board[position.row][position.col] = tile
         self.played_positions.append(position)
+        self.adjust_padding()
 
     def adjust_padding(self):
         """ Inserts padding to the board if needed. Is needed when a tile is in
             at the most outer layer of the board (first or last column or row).
             Void spaces are needed always at the outer layer to make be able to
             make moves.
+            The played positions adjust is called just for top and left padding,
+            since they change the row and columns of the original placed tiles.
 
         """
         top = first = 0
@@ -165,8 +181,9 @@ class Board:
         # check top padding
         if any(self.board[top]):  # any tile in first row?
             self.board.insert(0, [0] * len(self.board[0]))
+            self.adjust_played_positions(1, 0)
 
-        # check bottom padding
+            # check bottom padding
         bottom = len(self.board) - 1
         if any(self.board[bottom]):  # any tile in last row?
             self.board.append([0] * len(self.board[0]))
@@ -176,6 +193,7 @@ class Board:
             if row[first]:  # any tile in first column?
                 for i in range(len(self.board)):
                     self.board[i].insert(0, 0)
+                self.adjust_played_positions(0, 1)
                 break;
 
         # check right padding
@@ -185,6 +203,18 @@ class Board:
                 for i in range(len(self.board)):
                     self.board[i].append(0)
                 break;
+
+    def adjust_played_positions(self, row_offset, col_offset):
+        """ Adjust the played positions by an offset, after a padding happens.
+
+            Args:
+                row_offset(int): row offset applied to get the updated position in the board.
+                col_offset(int): col offset applied to get the updated position in the board.
+
+        """
+        for played_pos in self.played_positions:
+            played_pos.row += row_offset
+            played_pos.col += col_offset
 
     def is_valid_move(self, tile, position):
         """ Determines if a tile move if valid. Checks vertically and horizontally.
