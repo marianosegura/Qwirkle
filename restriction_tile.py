@@ -5,18 +5,17 @@ class TileRestriction:
 
         Attributes:
             restriction(str): Restriction in string form.
-            row(int): Board col.
-            col(int): Board col.
+            position(:obj:`Position`): Board position.
 
     """
 
-    def __init__(self, restriction):
+    def __init__(self, restriction, position):
         """ The constructor receives string restriction.
 
             Args:
                 restriction(str): Restriction in string form.
+                position(:obj:`Position`): Board position.
 
         """
         self.restriction = restriction
-        self.row = None
-        self.col = None
+        self.position = position
