@@ -86,6 +86,8 @@ class Board:
 
         """
         for position in self.played_positions:
+            #print(self.board)
+            #print(position)
             if self.board[position.row][position.col] is tile:
                 return position
         return None
@@ -383,7 +385,12 @@ class Board:
     def __str__(self):
         to_string = ""
         for row in self.board:
-            to_string += str(row) + "\n"
+            for tile in row:
+                if tile == 0:
+                    to_string += "0   "
+                else:
+                    to_string += str(tile) + " "
+            to_string += "\n"
         return to_string
 
     def __len__(self):

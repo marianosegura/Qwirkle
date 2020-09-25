@@ -5,9 +5,9 @@ class Color(Enum):
         yellow, green, orange, purple and blue.
 
     """
-    RED = 'red'
-    YELLOW = 'yellow'
-    GREEN = 'green'
-    ORANGE = 'orange'
-    PURPLE = 'purple'
-    BLUE = 'blue'
+    RED = 'rd'
+    YELLOW = 'yl'
+    GREEN = 'gr'
+    ORANGE = 'or'
+    PURPLE = 'pr'
+    BLUE = 'bl'
