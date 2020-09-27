@@ -15,7 +15,7 @@ class Bot:
 
     def __init__(self):
         #self.hand = []
-        self.hand = [b_crc, r_sqr, b_str] # overridden for testing
+        self.hand = [b_crc, b_clo, b_str] # overridden for testing
         self.score = 0
 
 
@@ -57,11 +57,8 @@ class Bot:
                 turn_steps(:obj:`TurnSteps`): Turn steps object used to permutate all the valid solutions.
 
         """
-        # condition just met when there is a play where all tiles
-        # of the hand can be used
-        full_hand_play = (hand_index == len(self.hand))
-        if full_hand_play:
-            plays.append(turn_steps.copy())
+        # all tiles were used for a turn_steps solution
+        if hand_index >= len(self.hand):
             return
 
         # look for valid tile moves in the at the current hand index
