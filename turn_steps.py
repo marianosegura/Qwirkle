@@ -1,5 +1,5 @@
 
-class TurnMoves:
+class TurnSteps:
     """ Tile moves done by a player in its turn. Keeps track
         of a list of tiles, played positions and points.
 
@@ -9,14 +9,13 @@ class TurnMoves:
             points(int): Play total points.
 
     """
-
     def __init__(self):
         """ The constructor initiates the attributes as empty.
-
         """
         self.tiles = []
         self.positions = []
         self.points = 0
+
 
     def add_move(self, tile, position):
         """ Appends a tile move to the attribute lists.
@@ -29,6 +28,7 @@ class TurnMoves:
         self.tiles.append(tile)
         self.positions.append(position)
 
+
     def discard_last_move(self):
         """ Deletes the last tile move from the attribute lists.
 
@@ -36,8 +36,21 @@ class TurnMoves:
         self.tiles.pop()
         self.positions.pop()
 
+
+    def copy(self):
+        """ Creates a shallow copy of the instance.
+
+        """
+        copy = TurnSteps()
+        copy.tiles.extend(self.tiles)
+        copy.positions.extend(self.positions)
+        copy.points = self.points
+        return copy
+
+
     def __len__(self):
         return len(self.tiles)
+
 
     def __str__(self):
         to_string = ''
@@ -45,6 +58,7 @@ class TurnMoves:
             to_string += str(self.tiles[i]) + str(self.positions[i]) + ' -> '
         to_string = to_string[:-3] # remove last arrow pointing to nothing
         return to_string
+
 
     def __repr__(self):
         return self.__str__()
