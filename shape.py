@@ -5,6 +5,8 @@ class Shape(Enum):
         circle, diamond, clover, cross and star.
 
     """
+
+
     SQUARE = '■'
     CIRCLE = '●'
     DIAMOND = '◆'

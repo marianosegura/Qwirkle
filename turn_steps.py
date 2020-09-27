@@ -9,6 +9,8 @@ class TurnSteps:
             points(int): Play total points.
 
     """
+
+
     def __init__(self):
         """ The constructor initiates the attributes as empty.
         """

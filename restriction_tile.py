@@ -9,6 +9,7 @@ class TileRestriction:
 
     """
 
+
     def __init__(self, restriction, position):
         """ The constructor receives string restriction.
 

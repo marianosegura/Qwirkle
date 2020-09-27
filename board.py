@@ -11,6 +11,8 @@ class Board:
             played_positions(:obj:`list` of :obj:`Position`): List of the positions played.
 
     """
+
+
     def __init__(self, board = [[0]]):
         """ The constructor can receive a board. Default board is empty.
 
@@ -22,6 +24,7 @@ class Board:
         self.played_positions = []
         if board != [[0]]:
             self.played_positions = self.get_played_positions(board)
+
 
     def get_played_positions(self, board):
         """ Returns all played positions in a board.
@@ -41,6 +44,7 @@ class Board:
                     played_positions.append(played_position)
         return played_positions
 
+
     def play_tile(self, tile, position):
         """ Determines if a tile move if valid. Checks vertically and horizontally.
 
@@ -52,6 +56,7 @@ class Board:
         self.board[position.row][position.col] = tile
         self.played_positions.append(position)
         self.adjust_padding()
+
 
     def adjust_padding(self):
         """ Inserts padding to the board if needed. Is needed when a tile is in
@@ -90,6 +95,7 @@ class Board:
                     self.board[i].append(0)
                 break;
 
+
     def adjust_played_positions(self, row_offset, col_offset):
         """ Adjust the played positions by an offset, after a padding happens.
 
@@ -102,6 +108,7 @@ class Board:
             played_pos.row += row_offset
             played_pos.col += col_offset
 
+
     def get_state(self):
         """ Returns the board state as a shallow copy of its tile matrix.
 
@@ -113,6 +120,7 @@ class Board:
             copy[pos.row][pos.col] = self.board[pos.row][pos.col]
         return copy
 
+
     def restore_state(self, state):
         """ Restores the state of the board. Sets board and played_positions.
 
@@ -122,6 +130,7 @@ class Board:
         """
         self.board = state
         self.played_positions = self.get_played_positions(state)
+
 
     def __str__(self):
         to_string = ""
@@ -133,6 +142,7 @@ class Board:
                     to_string += str(tile) + " "
             to_string += "\n"
         return to_string
+
 
     def __len__(self):
         return len(self.board)
