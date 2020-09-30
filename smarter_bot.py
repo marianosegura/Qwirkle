@@ -1,26 +1,86 @@
 from bot import Bot
 from tile import *
 from board import Board
-from turn_steps import TurnSteps
+from tile_combo import TileCombo
 from position import Position
 
 class SmarterBot(Bot):
 
 
     def play_turn(self, board):
-        self.get_qwirkle_chances_caused(board, None)
-        valid_plays = [] # list of TurnSteps objects
-        self.find_valid_plays(board, valid_plays) # list is passed as reference to fill it
+        self.hand = [r_sqr, r_crc, r_clv]
+
+        combos = [] # list of TileCombo objects
+        self.find_valid_plays(board, combos) # list is passed as reference to fill it
         # todo: filter by points, qwirkles chances caused and lines killed
 
 
-    def get_qwirkle_chances_caused(self, board, turn_steps):
+    def get_turn_points(self, board_object, tile_combo):
+        """ Calculates the total points of a tile turn combo.
+
+            Args:
+                board_object(:obj:`Board`): Board object instance with the current game state.
+                tile_combo(:obj:`TileCombo`): Tile movements made by a player.
+
+            Returns:
+                int: Turn steps' points.
+
+        """
+        board_state = board_object.get_state()  # save to restore later
+
+        self.play_all_steps(board_object, tile_combo)
+        # recover the updated positions of the played tiles
+        played_positions = board_object.played_positions[(len(board_object.played_positions) - len(tile_combo)):]
+
+        board = board_object.board
+        points = 0
+        seen_lines = [] # list of lines as python sets
+        for step_index in range(len(tile_combo)):
+            played_tile = tile_combo.tiles[step_index]
+            played_pos = played_positions[step_index]
+
+            horizontal_line = self.get_adjacent_horizontal_line(board, played_tile, played_pos.row, played_pos.col)
+            line_set = set(horizontal_line)
+            # lines of length 1 are omitted since they aren't combos
+            # seen lines are omitted to avoid counting twice the same line points
+            if len(line_set) > 1 and not line_set in seen_lines:
+                seen_lines.append(line_set) # append to seen lines
+                points += self.get_tile_line_points(line_set) # add points
+
+            vertical_line = self.get_adjacent_vertical_line(board, played_tile, played_pos.row, played_pos.col)
+            line_set = set(vertical_line)
+            if len(line_set) > 1 and not line_set in seen_lines:
+                seen_lines.append(line_set)
+                points += self.get_tile_line_points(line_set)
+
+        board_object.restore_state(board_state)
+        return points
+
+
+    @staticmethod
+    def get_tile_line_points(tile_line):
+        """ Calculates the total points of a line of tiles. A lines of length 6 is
+            a qwirkle and its points are doubled (that's 12 always).
+
+            Args:
+                tile_line(:obj:`list` of :obj:`Tile`): List of tiles.
+
+            Returns:
+                int: Tile line' points.
+
+        """
+        if len(tile_line) == 6:
+            return 12
+        else:
+            return len(tile_line)
+
+    def get_qwirkle_chances_caused(self, board, tile_combo):
         """ Counts the qwirkle chances caused by a set of tile moves for the next player.
             A qwirkle chance is caused when a tile line is left with 5 tiles.
 
             Args:
                 board_object(:obj:`Board`): Board object instance with the current game state.
-                turn_steps(:obj:`TurnSteps`): Tile movements made by a player.
+                tile_combo(:obj:`TileCombo`): Tile movements made by a player.
 
             Returns:
                 int: Number of lines killed.
@@ -29,9 +89,9 @@ class SmarterBot(Bot):
         board_state = board.get_state() # save to restore later
 
         chances = 0
-        for step_index in range(len(turn_steps)): # iterate all turn steps
-            tile = turn_steps.tiles[step_index]
-            pos = turn_steps.positions[step_index]
+        for step_index in range(len(tile_combo)): # iterate all turn steps
+            tile = tile_combo.tiles[step_index]
+            pos = tile_combo.positions[step_index]
 
             # the length of the linked vertical and horizontal combos are the reference
             horizontal_combo = len(self.get_adjacent_horizontal_line(board.board, tile, pos.row, pos.col))
@@ -52,13 +112,13 @@ class SmarterBot(Bot):
             if vertical_combo == 5:
                 chances += 1
 
-            board.play_tile(turn_steps.tiles[step_index], turn_steps.positions[step_index])
+            board.play_tile(tile_combo.tiles[step_index], tile_combo.positions[step_index])
 
         board.restore_state(board_state)
         return chances
 
 
-    def get_possible_lines_killed(self, board_object, turn_steps):
+    def get_possible_lines_killed(self, board_object, tile_combo):
         """ Counts the possible lines killed by a given set of tile movements.
             A line is killed when a line could have been linked between the played tile and another
             tile towards a direction (separated by empty cells) but due to the color or shape of
@@ -66,7 +126,7 @@ class SmarterBot(Bot):
 
             Args:
                 board_object(:obj:`Board`): Board object instance with the current game state.
-                turn_steps(:obj:`TurnSteps`): Tile movements made by a player.
+                tile_combo(:obj:`TileCombo`): Tile movements made by a player.
 
             Returns:
                 int: Number of lines killed.
@@ -75,13 +135,13 @@ class SmarterBot(Bot):
         lines_killed = 0 # can be 4 max, because of the 4 directions
         board_state = board_object.get_state()  # save to restore later
 
-        self.play_all_steps(board_object, turn_steps)
+        self.play_all_steps(board_object, tile_combo)
         # recover the updated final positions of the played tiles
-        updated_positions = board_object.played_positions[(len(board_object.played_positions) - len(turn_steps)):]
+        updated_positions = board_object.played_positions[(len(board_object.played_positions) - len(tile_combo)):]
 
         board = board_object.board # the 2d array of lists
-        for step_index in range(len(turn_steps)):
-            tile = turn_steps.tiles[step_index]
+        for step_index in range(len(tile_combo)):
+            tile = tile_combo.tiles[step_index]
             pos = updated_positions[step_index]
 
             # the adjacent cell in that direction has to be empty (0) to evaluate a possible killed line
@@ -157,15 +217,15 @@ class SmarterBot(Bot):
 
 
     @staticmethod
-    def play_all_steps(board, turn_steps):
-        """ Plays all the moves in a turn_steps object on a given board.
+    def play_all_steps(board, tile_combo):
+        """ Plays all the moves in a tile_combo object on a given board.
 
             Args:
                 board(:obj:`Board`): Board object with the current game state.
-                turn_steps(:obj:`TurnSteps`): Tile movements.
+                tile_combo(:obj:`TileCombo`): Tile movements.
 
         """
-        for step_index in range(len(turn_steps)):
-            tile = turn_steps.tiles[step_index]
-            pos = turn_steps.positions[step_index]
+        for step_index in range(len(tile_combo)):
+            tile = tile_combo.tiles[step_index]
+            pos = tile_combo.positions[step_index]
             board.play_tile(tile, pos)

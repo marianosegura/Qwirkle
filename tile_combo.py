@@ -1,5 +1,5 @@
 
-class TurnSteps:
+class TileCombo:
     """ Tile moves done by a player in its turn. Keeps track
         of a list of tiles, played positions and points.
 
@@ -43,7 +43,7 @@ class TurnSteps:
         """ Creates a shallow copy of the instance.
 
         """
-        copy = TurnSteps()
+        copy = TileCombo()
         copy.tiles.extend(self.tiles)
         copy.positions.extend(self.positions)
         copy.points = self.points

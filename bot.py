@@ -1,7 +1,7 @@
 from position import Position
 from restriction_tile import TileRestriction
 from tile import *
-from turn_steps import TurnSteps
+from tile_combo import TileCombo
 from board import Board
 
 class Bot:
@@ -15,7 +15,7 @@ class Bot:
 
     def __init__(self):
         #self.hand = []
-        self.hand = [b_crc, b_clo, b_str] # overridden for testing
+        self.hand = [b_crc, b_clv, b_str] # overridden for testing
         self.score = 0
 
 
@@ -28,14 +28,14 @@ class Bot:
                 board(:obj:`Board`): Board object instance with the current game state.
 
             Returns:
-                :obj:`TurnSteps`: Steps that indicates which tiles to play in which positions.
+                :obj:`TileCombo`: Steps that indicates which tiles to play in which positions.
 
         """
         board = Board([[0, 0   , 0], # overridden for testing
                        [0, b_sqr, 0],
                        [0, 0   , 0]])
 
-        valid_plays = [] # list of TurnSteps objects
+        valid_plays = [] # list of TileCombo objects
         self.find_valid_plays(board, valid_plays) # list is passed as reference to fill it
 
         # for now just printing
@@ -45,19 +45,19 @@ class Bot:
         # todo: filter the play with the most points and return it
 
 
-    def find_valid_plays(self, board, plays, hand_index = 0, turn_steps = TurnSteps()):
+    def find_valid_plays(self, board, combos, hand_index = 0, tile_combo = TileCombo()):
         """ Find all valid plays for a given tile hand and board using backtracking.
-            Returns in its argument plays as a list of TurnSteps objects.
+            Returns in its argument plays as a list of TileCombo objects.
 
             Args:
                 board(:obj:`Board`): Board object instance with the current game state.
-                plays(:obj:`list` of :obj:`TurnSteps`): List of all valid turn steps.
+                combos(:obj:`list` of :obj:`TileCombo`): List of all valid tile combos.
                 hand_index(int): Current index of the position in the tile hand being verified.
                                  Goes from 0 to the last index in the hand
-                turn_steps(:obj:`TurnSteps`): Turn steps object used to permutate all the valid solutions.
+                tile_combo(:obj:`TileCombo`): TileCombo object used to permute all the valid solutions.
 
         """
-        # all tiles were used for a turn_steps solution
+        # all tiles were used for a tile_combo solution
         if hand_index >= len(self.hand):
             return
 
@@ -67,28 +67,28 @@ class Bot:
 
             # iterate for all the playable positions for the given tile
             # with the current played turn moves
-            for playable_position in self.get_playable_positions(board, turn_steps):
+            for playable_position in self.get_playable_positions(board, tile_combo):
 
                 # tile is valid in the playable position?
                 if self.is_valid_move(board.board, tile, playable_position):
                     # save states to backtrack later
                     board_state = board.get_state()  # save board state
                     board.play_tile(tile, playable_position)  # move into board
-                    turn_steps.add_move(tile, playable_position)  # move into turn moves
+                    tile_combo.add_move(tile, playable_position)  # move into turn moves
 
                     # at this point we have created a new valid play permutation
                     # this permutation don't use all hand tiles (that is caught in the first if statement)
-                    plays.append(turn_steps.copy())  # add valid play
+                    combos.append(tile_combo.copy())  # add valid play
 
                     # swap to look for all other possible tile moves linked to this one
                     self.swap(self.hand, hand_index, i)
 
-                    # search for bigger combos that include the current turn moves
-                    self.find_valid_plays(board, plays, hand_index + 1, turn_steps)
+                    # search for bigger combos that include the current combo
+                    self.find_valid_plays(board, combos, hand_index + 1, tile_combo)
 
                     # restore previous state / backtrack
                     board.restore_state(board_state)  # restore board
-                    turn_steps.discard_last_move()  # restore turn moves
+                    tile_combo.discard_last_move()  # restore combo
                     self.swap(self.hand, hand_index, i)  # restore hand
 
 
@@ -104,28 +104,28 @@ class Bot:
         list_[i], list_[j] = list_[j], list_[i]
 
 
-    def get_playable_positions(self, board, turn_steps):
+    def get_playable_positions(self, board, tile_combo):
         """ Returns all playable positions of the board, given the player
             tile moves in the turn.
 
             Args:
                 board(:obj:`Board`): Board object instance with the current game state.
-                turn_steps(:obj:`TurnSteps`): Tile movements made by a player.
+                tile_combo(:obj:`TileCombo`): Tile movements made by a player.
 
             Returns:
                 :obj:`list` of :obj:`Position`: List of playable  positions.
 
         """
         restriction = None
-        # if turn steps is not empty there are restrictions
-        if len(turn_steps) >= 1:
-            first_tile_position = self.get_tile_position(board, turn_steps.tiles[0])
+        # if the combo isn't empty there are restrictions
+        if len(tile_combo) >= 1:
+            first_tile_position = self.get_tile_position(board, tile_combo.tiles[0])
             if not first_tile_position:
                 print("!")
-            if len(turn_steps) == 1:
+            if len(tile_combo) == 1:
                 restriction = TileRestriction('same row or col', first_tile_position)
-            if len(turn_steps) >= 2:
-                if turn_steps.positions[0].row == turn_steps.positions[1].row:
+            if len(tile_combo) >= 2:
+                if tile_combo.positions[0].row == tile_combo.positions[1].row:
                     restriction = TileRestriction('same row', first_tile_position)
                 else:
                     restriction = TileRestriction('same col', first_tile_position)
