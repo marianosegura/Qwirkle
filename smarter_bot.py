@@ -1,17 +1,22 @@
 from bot import Bot
-from tile import *
-from board import Board
-from tile_combo import TileCombo
-from position import Position
 
 class SmarterBot(Bot):
+    """ Smart bot that take into account combo points, qwirkle chances caused and
+        possible lines killed to play combo.
 
+        Attributes:
+            hand(:obj:`list` of :obj:`Tile`): List of playable tiles.
+            points(int): Bot current points.
+    """
 
-    def play_turn(self, board):
-        """ Plays the smartest tile combo it founds for a turn.
+    def get_smartest_combo(self, board):
+        """ Returns the smartest tile combo it founds for a turn.
 
             Args:
                 board(:obj:`Board`): Board object instance with the current game state.
+
+            Returns:
+                :obj:`TileCombo`: Smartest combo found.
 
         """
         combos = [] # list of TileCombo objects
@@ -21,8 +26,8 @@ class SmarterBot(Bot):
         for combo_option in combos:
             smartest_combo = self.pick_smarter_combo(board, smartest_combo, combo_option)
 
-        self.play_combo(board, smartest_combo)
         #print(smartest_combo)
+        return smartest_combo
 
 
     def pick_smarter_combo(self, board, combo1, combo2):
@@ -35,14 +40,14 @@ class SmarterBot(Bot):
                 combo2(:obj:`TileCombo`): Second combo option.
 
             Returns:
-                :obj:`TileCombo`: Smarter combo option
+                :obj:`TileCombo`: Smarter combo option.
 
         """
-        points1 = self.get_turn_points(board, combo1)
+        points1 = self.get_combo_points(board, combo1)
         chances1 = self.get_qwirkle_chances_caused(board, combo1)
         kills1 = self.get_possible_lines_killed(board, combo1)
 
-        points2 = self.get_turn_points(board, combo2)
+        points2 = self.get_combo_points(board, combo2)
         chances2 = self.get_qwirkle_chances_caused(board, combo2)
         kills2 = self.get_possible_lines_killed(board, combo2)
 
@@ -58,7 +63,7 @@ class SmarterBot(Bot):
         return smarter
 
 
-    def get_turn_points(self, board_object, tile_combo):
+    def get_combo_points(self, board_object, tile_combo):
         """ Calculates the total points of a tile turn combo.
 
             Args:
