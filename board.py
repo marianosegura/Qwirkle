@@ -54,7 +54,7 @@ class Board:
 
         """
         self.board[position.row][position.col] = tile
-        self.played_positions.append(position)
+        self.played_positions.append(Position(position.row, position.col))
         self.adjust_padding()
 
 
