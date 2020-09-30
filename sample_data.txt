@@ -1,0 +1,29 @@
+Board and moves configuration to test bots decision making
+
+
+
+# test data for qwirkle chances caused 
+        board_state = [[0, 0, 0, 0, 0, 0, 0, 0],
+                       [0, 0, 0, 0, 0, y_crc, 0, 0],
+                       [0, 0, 0, 0, 0, p_crc, 0, 0],
+                       [0, 0, 0, 0, 0, o_crc, 0, 0],
+                       [0, 0, 0, 0, 0, r_crc, 0, 0],
+                       [0, b_sqr, 0, 0, 0, 0, 0, 0],
+                       [0, 0, 0, 0, 0, 0, 0, 0]]
+        board = Board(board_state)
+	turn_steps = TurnSteps()
+        turn_steps.tiles = [b_crc, r_crc]
+        turn_steps.positions = [Position(3, 4), Position(4, 4)]
+
+# test data for possible lines killed
+        board_state = [[0, 0,     0,     0,     0,     0, 0,     0],
+                       [0, 0,     0,     0,     b_x,   0, 0,     0],
+                       [0, 0,     0,     0,     0,     0, 0,     0],
+                       [0, b_sqr, b_str, b_dmd, 0,     0, 0,     0],
+                       [0, r_sqr, 0,     0,     0,     0, r_clv, 0],
+                       [0, 0,     0,     0,     0,     0, 0,     0],
+                       [0, 0,     0,     0,     o_crc, 0, 0,     0]]
+        board_object = Board(board_state)
+        turn_steps = TurnSteps()
+        turn_steps.tiles = [b_crc, r_crc]
+        turn_steps.positions = [Position(3, 4), Position(4, 4)]
