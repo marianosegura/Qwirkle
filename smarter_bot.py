@@ -8,11 +8,54 @@ class SmarterBot(Bot):
 
 
     def play_turn(self, board):
-        self.hand = [r_sqr, r_crc, r_clv]
+        """ Plays the smartest tile combo it founds for a turn.
 
+            Args:
+                board(:obj:`Board`): Board object instance with the current game state.
+
+        """
         combos = [] # list of TileCombo objects
         self.find_valid_plays(board, combos) # list is passed as reference to fill it
-        # todo: filter by points, qwirkles chances caused and lines killed
+
+        smartest_combo = combos[0]
+        for combo_option in combos:
+            smartest_combo = self.pick_smarter_combo(board, smartest_combo, combo_option)
+
+        self.play_combo(board, smartest_combo)
+        #print(smartest_combo)
+
+
+    def pick_smarter_combo(self, board, combo1, combo2):
+        """ Picks the smarter combo between two options. In descending order of smartness are
+            considered: less qwirkle chances caused, more combo points and less possible lines killed.
+
+            Args:
+                board(:obj:`Board`): Board object instance with the current game state.
+                combo1(:obj:`TileCombo`): First combo option.
+                combo2(:obj:`TileCombo`): Second combo option.
+
+            Returns:
+                :obj:`TileCombo`: Smarter combo option
+
+        """
+        points1 = self.get_turn_points(board, combo1)
+        chances1 = self.get_qwirkle_chances_caused(board, combo1)
+        kills1 = self.get_possible_lines_killed(board, combo1)
+
+        points2 = self.get_turn_points(board, combo2)
+        chances2 = self.get_qwirkle_chances_caused(board, combo2)
+        kills2 = self.get_possible_lines_killed(board, combo2)
+
+        smarter = combo2
+        if points1 > points2 and chances1 <= chances2 and kills1 <= kills2:
+            smarter = combo1
+        elif points1 > points2 and chances1 <= chances2:
+            smarter = combo1
+        elif chances1 < chances2 and kills1 <= kills2:
+            smarter = combo1
+        elif chances1 < chances2:
+            smarter = combo1
+        return smarter
 
 
     def get_turn_points(self, board_object, tile_combo):
@@ -28,7 +71,7 @@ class SmarterBot(Bot):
         """
         board_state = board_object.get_state()  # save to restore later
 
-        self.play_all_steps(board_object, tile_combo)
+        self.play_combo(board_object, tile_combo)
         # recover the updated positions of the played tiles
         played_positions = board_object.played_positions[(len(board_object.played_positions) - len(tile_combo)):]
 
@@ -73,6 +116,7 @@ class SmarterBot(Bot):
             return 12
         else:
             return len(tile_line)
+
 
     def get_qwirkle_chances_caused(self, board, tile_combo):
         """ Counts the qwirkle chances caused by a set of tile moves for the next player.
@@ -135,7 +179,7 @@ class SmarterBot(Bot):
         lines_killed = 0 # can be 4 max, because of the 4 directions
         board_state = board_object.get_state()  # save to restore later
 
-        self.play_all_steps(board_object, tile_combo)
+        self.play_combo(board_object, tile_combo)
         # recover the updated final positions of the played tiles
         updated_positions = board_object.played_positions[(len(board_object.played_positions) - len(tile_combo)):]
 
@@ -217,7 +261,7 @@ class SmarterBot(Bot):
 
 
     @staticmethod
-    def play_all_steps(board, tile_combo):
+    def play_combo(board, tile_combo):
         """ Plays all the moves in a tile_combo object on a given board.
 
             Args:
