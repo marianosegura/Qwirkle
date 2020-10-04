@@ -12,7 +12,6 @@ class Board:
 
     """
 
-
     def __init__(self, board = [[0]]):
         """ The constructor can receive a board. Default board is empty.
 
@@ -130,6 +129,53 @@ class Board:
         """
         self.board = state
         self.played_positions = self.get_played_positions(state)
+
+
+    def get_last_played_positions(self, number):
+        return self.played_positions[(len(self.played_positions) - number):]
+
+
+    def is_empty(self):
+        """ Indicates if the board has any tile.
+
+            Returns:
+                bool: True if the aren't any played positions, false otherwise.
+
+        """
+        return len(self.played_positions) == 0
+
+
+    def get_current_tiles_positions(self, tiles):
+        """ Returns a list of position of a list of tiles on the board.
+
+            Args:
+                tiles(:obj:`list` of :obj:`Tile`): Tiles to search.
+
+            Returns:
+                :obj:`list` of :obj:`Positions`: Current tiles positions on the board.
+
+        """
+        positions = []
+        for tile in tiles:
+            tile_pos = self.get_tile_position(tile)
+            positions.append(tile_pos)
+        return positions
+
+
+    def get_tile_position(self, tile):
+        """ Returns the position of a tile on the board.
+
+            Args:
+                tile(:obj:`Tile`): Tile to search.
+
+            Returns:
+                :obj:`Position`: Tile board position.
+
+        """
+        for position in self.played_positions:
+            if self.board[position.row][position.col] is tile:
+                return position
+        return None
 
 
     def __str__(self):

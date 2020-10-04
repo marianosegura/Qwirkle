@@ -1,8 +1,6 @@
 from position import Position
 from restriction_tile import TileRestriction
-from tile import *
 from tile_combo import TileCombo
-from board import Board
 
 class Bot:
     """ Simple bot that plays the move that produces the most points
@@ -10,18 +8,18 @@ class Bot:
 
         Attributes:
             hand(:obj:`list` of :obj:`Tile`): List of playable tiles.
+            points(int): Bot current points.
     """
 
 
     def __init__(self):
-        #self.hand = []
-        self.hand = [b_crc, b_clv, b_str] # overridden for testing
-        self.score = 0
+        self.hand = []
+        self.points = 0
 
 
-    def play_turn(self, board):
-        """ Decides turn steps to play in a turn for a given board, based on current tile hand.
-            Uses find_valid_plays backtracking method to find all the possible plays and returns
+    def get_best_combo(self, board):
+        """ Decides combo to play in a turn for a given board, based on current tile hand.
+            Uses find_valid_combos backtracking method to find all the possible plays and returns
             the one that scores the most points.
 
             Args:
@@ -29,23 +27,26 @@ class Bot:
 
             Returns:
                 :obj:`TileCombo`: Steps that indicates which tiles to play in which positions.
-
         """
-        board = Board([[0, 0   , 0], # overridden for testing
-                       [0, b_sqr, 0],
-                       [0, 0   , 0]])
+        combos = []  # list of TileCombo objects
 
-        valid_plays = [] # list of TileCombo objects
-        self.find_valid_plays(board, valid_plays) # list is passed as reference to fill it
+        self.find_valid_combos(board, combos)  # list is passed as reference to fill it
 
-        # for now just printing
-        for play in valid_plays:
-            print(play)
+        if not combos:  # rare condition where nothing can be played with the current hand
+            return None
 
-        # todo: filter the play with the most points and return it
+        best_combo = combos[0]
+        best_points = self.get_combo_points(board, best_combo)
+
+        for combo_option in combos:
+            if self.get_combo_points(board, combo_option) > best_points:
+                best_combo = combo_option # update best combo
+                best_points = self.get_combo_points(board, best_combo) # update its points
+
+        return best_combo
 
 
-    def find_valid_plays(self, board, combos, hand_index = 0, tile_combo = TileCombo()):
+    def find_valid_combos(self, board, combos, hand_index = 0, tile_combo = TileCombo()):
         """ Find all valid plays for a given tile hand and board using backtracking.
             Returns in its argument plays as a list of TileCombo objects.
 
@@ -67,7 +68,9 @@ class Bot:
 
             # iterate for all the playable positions for the given tile
             # with the current played turn moves
-            for playable_position in self.get_playable_positions(board, tile_combo):
+            playable_positions = self.get_playable_positions(board, tile_combo)
+
+            for playable_position in playable_positions:
 
                 # tile is valid in the playable position?
                 if self.is_valid_move(board.board, tile, playable_position):
@@ -84,7 +87,7 @@ class Bot:
                     self.swap(self.hand, hand_index, i)
 
                     # search for bigger combos that include the current combo
-                    self.find_valid_plays(board, combos, hand_index + 1, tile_combo)
+                    self.find_valid_combos(board, combos, hand_index + 1, tile_combo)
 
                     # restore previous state / backtrack
                     board.restore_state(board_state)  # restore board
@@ -116,45 +119,37 @@ class Bot:
                 :obj:`list` of :obj:`Position`: List of playable  positions.
 
         """
+        # the only playable position on a empty board is (0, 0)
+        if board.is_empty():
+            return [Position(0, 0)]
+                                                                           # Xrd(1,0) -> Xgr(2,1) -> ★rd(2,4)
+        # current positions of the played tiles of the combo
+        combo_positions = board.get_current_tiles_positions(tile_combo.tiles)
+
         restriction = None
         # if the combo isn't empty there are restrictions
         if len(tile_combo) >= 1:
-            first_tile_position = self.get_tile_position(board, tile_combo.tiles[0])
-            if not first_tile_position:
-                print("!")
+            first_tile_position = combo_positions[0]
             if len(tile_combo) == 1:
                 restriction = TileRestriction('same row or col', first_tile_position)
             if len(tile_combo) >= 2:
-                if tile_combo.positions[0].row == tile_combo.positions[1].row:
+                if first_tile_position.row == combo_positions[1].row:
                     restriction = TileRestriction('same row', first_tile_position)
                 else:
                     restriction = TileRestriction('same col', first_tile_position)
 
         playable_positions = []
-        for played_position in board.played_positions:
+        # if combo is not empty, search adjacent tiles to the already played tiles
+        # else search adjacent to all the board tiles
+        search_positions = combo_positions if len(tile_combo) >= 1 else board.played_positions
+
+        for played_position in search_positions:
             adjacent_empty_positions = self.get_adjacent_empty_positions(board.board, played_position)
             playable_positions.extend(adjacent_empty_positions)
 
         playable_positions = self.filter_positions(playable_positions, restriction)
 
         return playable_positions
-
-
-    def get_tile_position(self, board, tile):
-        """ Returns the position of a tile on the board.
-
-            Args:
-                board(:obj:`Board`): Board object instance with the current game state.
-                tile(:obj:`Tile`): Tile to search.
-
-            Returns:
-                :obj:`Position`: Tile board position.
-
-        """
-        for position in board.played_positions:
-            if board.board[position.row][position.col] is tile:
-                return position
-        return None
 
 
     def filter_positions(self, positions, tile_restriction):
@@ -390,3 +385,120 @@ class Bot:
             else:
                 seen_tiles.add(str(tile))
         return True
+
+
+    def get_combo_points(self, board_object, tile_combo):
+        """ Calculates the total points of a tile turn combo.
+
+            Args:
+                board_object(:obj:`Board`): Board object instance with the current game state.
+                tile_combo(:obj:`TileCombo`): Tile movements made by a player.
+
+            Returns:
+                int: Turn steps' points.
+
+        """
+        board_state = board_object.get_state()  # save to restore later
+
+        self.play_combo(board_object, tile_combo)
+        # recover the updated positions of the played tiles
+        played_positions = board_object.get_current_tiles_positions(tile_combo.tiles)
+
+        board = board_object.board
+        points = 0
+        seen_lines = [] # list of lines as python sets
+        for step_index in range(len(tile_combo)):
+            played_tile = tile_combo.tiles[step_index]
+            played_pos = played_positions[step_index]
+
+            horizontal_line = self.get_adjacent_horizontal_line(board, played_tile, played_pos.row, played_pos.col)
+            line_set = set(horizontal_line)
+            # lines of length 1 are omitted since they aren't combos
+            # seen lines are omitted to avoid counting twice the same line points
+            if len(line_set) > 1 and not line_set in seen_lines:
+                seen_lines.append(line_set) # append to seen lines
+                points += self.get_tile_line_points(line_set) # add points
+
+            vertical_line = self.get_adjacent_vertical_line(board, played_tile, played_pos.row, played_pos.col)
+            line_set = set(vertical_line)
+            if len(line_set) > 1 and not line_set in seen_lines:
+                seen_lines.append(line_set)
+                points += self.get_tile_line_points(line_set)
+
+        board_object.restore_state(board_state)
+        return points
+
+
+    @staticmethod
+    def play_combo(board, tile_combo):
+        """ Plays all the moves in a tile_combo object on a given board.
+
+            Args:
+                board(:obj:`Board`): Board object with the current game state.
+                tile_combo(:obj:`TileCombo`): Tile movements.
+
+        """
+        for step_index in range(len(tile_combo)):
+            tile = tile_combo.tiles[step_index]
+            pos = tile_combo.positions[step_index]
+            board.play_tile(tile, pos)
+
+
+    @staticmethod
+    def get_tile_line_points(tile_line):
+        """ Calculates the total points of a line of tiles. A lines of length 6 is
+            a qwirkle and its points are doubled (that's 12 always).
+
+            Args:
+                tile_line(:obj:`list` of :obj:`Tile`): List of tiles.
+
+            Returns:
+                int: Tile line' points.
+
+        """
+        if len(tile_line) == 6:
+            #print("qwirkle")
+            return 12
+        else:
+            return len(tile_line)
+
+
+    def draw_tiles(self, bag):
+        """ Calculates the total points of a line of tiles. A lines of length 6 is
+                    a qwirkle and its points are doubled (that's 12 always).
+
+                    Args:
+                        tile_line(:obj:`list` of :obj:`Tile`): List of tiles.
+
+                    Returns:
+                        int: Tile line' points.
+
+        """
+        while len(self.hand) < 6 and not bag.is_empty():
+            self.hand.append(bag.draw())
+
+
+    def out_of_tiles(self):
+        """ Indicates if the bot is out of tiles.
+
+            Returns:
+                bool: True if hand is empty, false otherwise.
+
+        """
+        return len(self.hand) == 0
+
+
+    def remove_tiles_from_hand(self, tiles):
+        """ Removes a list of tiles from the hand. Though to be used after a combo is played.
+
+            Args:
+                tiles(:obj:`list` of :obj:`Tile`): List of tiles.
+
+        """
+        for tile in tiles:
+            self.hand.remove(tile)
+
+
+    def __str__(self):
+        return "Points bot: " + str(self.points) + "pts " + str(self.hand)
+

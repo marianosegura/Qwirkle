@@ -9,7 +9,8 @@ class SmarterBot(Bot):
             points(int): Bot current points.
     """
 
-    def get_smartest_combo(self, board):
+
+    def get_best_combo(self, board):
         """ Returns the smartest tile combo it founds for a turn.
 
             Args:
@@ -19,108 +20,62 @@ class SmarterBot(Bot):
                 :obj:`TileCombo`: Smartest combo found.
 
         """
-        combos = [] # list of TileCombo objects
-        self.find_valid_plays(board, combos) # list is passed as reference to fill it
+        combos = []  # list of TileCombo objects
 
+        self.find_valid_combos(board, combos)  # list is passed as reference to fill it
+
+        if not combos:  # rare condition where nothing can be played with the current hand
+            return None
+
+        # Smartest combo properties are hold for efficiency
         smartest_combo = combos[0]
+        smart_points = self.get_combo_points(board, smartest_combo)
+        smart_chances = self.get_qwirkle_chances_caused(board, smartest_combo)
+        smart_kills = self.get_possible_lines_killed(board, smartest_combo)
+
         for combo_option in combos:
-            smartest_combo = self.pick_smarter_combo(board, smartest_combo, combo_option)
+            smartest_combo = self.pick_smarter_combo(board, smartest_combo, smart_points, smart_chances, smart_kills, combo_option)
+
+            # update smartest combo properties if combo changed
+            if smartest_combo == combo_option:
+                smart_points = self.get_combo_points(board, smartest_combo)
+                smart_chances = self.get_qwirkle_chances_caused(board, smartest_combo)
+                smart_kills = self.get_possible_lines_killed(board, smartest_combo)
 
         #print(smartest_combo)
         return smartest_combo
 
 
-    def pick_smarter_combo(self, board, combo1, combo2):
+    def pick_smarter_combo(self, board, combo1, points1, chances1, kills1, combo2):
         """ Picks the smarter combo between two options. In descending order of smartness are
             considered: less qwirkle chances caused, more combo points and less possible lines killed.
 
             Args:
                 board(:obj:`Board`): Board object instance with the current game state.
                 combo1(:obj:`TileCombo`): First combo option.
+                points1(int): First combo points.
+                chances1(int): First combo qwirkle chances caused.
+                kills1(int): First combo possible lines killed.
                 combo2(:obj:`TileCombo`): Second combo option.
 
             Returns:
                 :obj:`TileCombo`: Smarter combo option.
 
         """
-        points1 = self.get_combo_points(board, combo1)
-        chances1 = self.get_qwirkle_chances_caused(board, combo1)
-        kills1 = self.get_possible_lines_killed(board, combo1)
-
         points2 = self.get_combo_points(board, combo2)
         chances2 = self.get_qwirkle_chances_caused(board, combo2)
         kills2 = self.get_possible_lines_killed(board, combo2)
 
-        smarter = combo2
-        if points1 > points2 and chances1 <= chances2 and kills1 <= kills2:
-            smarter = combo1
-        elif points1 > points2 and chances1 <= chances2:
-            smarter = combo1
-        elif chances1 < chances2 and kills1 <= kills2:
-            smarter = combo1
-        elif chances1 < chances2:
-            smarter = combo1
+        smarter = combo1
+
+        if chances2 < chances1:
+            smarter = combo2
+        elif points2 > points1 and chances2 == chances1:
+            smarter = combo2
+        elif points2 == points1 and kills2 <= kills1 and chances2 == chances1:
+            smarter = combo2
+
         return smarter
-
-
-    def get_combo_points(self, board_object, tile_combo):
-        """ Calculates the total points of a tile turn combo.
-
-            Args:
-                board_object(:obj:`Board`): Board object instance with the current game state.
-                tile_combo(:obj:`TileCombo`): Tile movements made by a player.
-
-            Returns:
-                int: Turn steps' points.
-
-        """
-        board_state = board_object.get_state()  # save to restore later
-
-        self.play_combo(board_object, tile_combo)
-        # recover the updated positions of the played tiles
-        played_positions = board_object.played_positions[(len(board_object.played_positions) - len(tile_combo)):]
-
-        board = board_object.board
-        points = 0
-        seen_lines = [] # list of lines as python sets
-        for step_index in range(len(tile_combo)):
-            played_tile = tile_combo.tiles[step_index]
-            played_pos = played_positions[step_index]
-
-            horizontal_line = self.get_adjacent_horizontal_line(board, played_tile, played_pos.row, played_pos.col)
-            line_set = set(horizontal_line)
-            # lines of length 1 are omitted since they aren't combos
-            # seen lines are omitted to avoid counting twice the same line points
-            if len(line_set) > 1 and not line_set in seen_lines:
-                seen_lines.append(line_set) # append to seen lines
-                points += self.get_tile_line_points(line_set) # add points
-
-            vertical_line = self.get_adjacent_vertical_line(board, played_tile, played_pos.row, played_pos.col)
-            line_set = set(vertical_line)
-            if len(line_set) > 1 and not line_set in seen_lines:
-                seen_lines.append(line_set)
-                points += self.get_tile_line_points(line_set)
-
-        board_object.restore_state(board_state)
-        return points
-
-
-    @staticmethod
-    def get_tile_line_points(tile_line):
-        """ Calculates the total points of a line of tiles. A lines of length 6 is
-            a qwirkle and its points are doubled (that's 12 always).
-
-            Args:
-                tile_line(:obj:`list` of :obj:`Tile`): List of tiles.
-
-            Returns:
-                int: Tile line' points.
-
-        """
-        if len(tile_line) == 6:
-            return 12
-        else:
-            return len(tile_line)
 
 
     def get_qwirkle_chances_caused(self, board, tile_combo):
@@ -206,7 +161,7 @@ class SmarterBot(Bot):
                         # the line linked to the found found is appended to the line
                         line.extend(self.get_adjacent_horizontal_line(board, board[pos.row][col], pos.row, col))
                         possible_line_len = len(line) + cells_traversed # possible line can be length 6 max to be valid
-                        if possible_line_len <= 6 and not self.is_valid_line(line):
+                        if possible_line_len <= 6 and not self.is_valid_line(line) and cells_traversed != 1:
                             lines_killed += 1 # line to the left killed
                         break
                     col -= 1
@@ -222,7 +177,7 @@ class SmarterBot(Bot):
                         line = self.get_adjacent_horizontal_line(board, tile, pos.row, pos.col)
                         line.extend(self.get_adjacent_horizontal_line(board, board[pos.row][col], pos.row, col))
                         possible_line_len = len(line) + cells_traversed
-                        if possible_line_len <= 6 and not self.is_valid_line(line):
+                        if possible_line_len <= 6 and not self.is_valid_line(line) and cells_traversed != 1:
                             lines_killed += 1 # line to the right killed
                         break
                     col += 1
@@ -238,7 +193,7 @@ class SmarterBot(Bot):
                         line = self.get_adjacent_vertical_line(board, tile, pos.row, pos.col)
                         line.extend(self.get_adjacent_vertical_line(board, board[row][pos.col], row, pos.col))
                         possible_line_len = len(line) + cells_traversed
-                        if possible_line_len <= 6 and not self.is_valid_line(line):
+                        if possible_line_len <= 6 and not self.is_valid_line(line) and cells_traversed != 1:
                             lines_killed += 1 # line up killed
                         break
                     row -= 1
@@ -255,7 +210,7 @@ class SmarterBot(Bot):
                         line = self.get_adjacent_vertical_line(board, tile, pos.row, pos.col)
                         line.extend(self.get_adjacent_vertical_line(board, board[row][pos.col], row, pos.col))
                         possible_line_len = len(line) + cells_traversed
-                        if possible_line_len <= 6 and not self.is_valid_line(line):
+                        if possible_line_len <= 6 and not self.is_valid_line(line) and cells_traversed != 1:
                             lines_killed += 1 # line down killed
                         break
                     row += 1
@@ -265,16 +220,6 @@ class SmarterBot(Bot):
         return lines_killed
 
 
-    @staticmethod
-    def play_combo(board, tile_combo):
-        """ Plays all the moves in a tile_combo object on a given board.
+    def __str__(self):
+        return "Smart bot: " + str(self.points) + "pts " + str(self.hand)
 
-            Args:
-                board(:obj:`Board`): Board object with the current game state.
-                tile_combo(:obj:`TileCombo`): Tile movements.
-
-        """
-        for step_index in range(len(tile_combo)):
-            tile = tile_combo.tiles[step_index]
-            pos = tile_combo.positions[step_index]
-            board.play_tile(tile, pos)

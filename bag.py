@@ -7,8 +7,7 @@ class Bag:
     """ Qwirkle bag of tiles.
 
         Attributes:
-                row(int): Board row.
-                col(int): Board col.
+                tiles(:obj:`list` of :obj:`Tile`): List of playable tiles.
 
     """
 
@@ -57,6 +56,21 @@ class Bag:
         """
         for discarded_tile in range(number):
             self.tiles.pop()
+
+
+    def swap_all_tiles(self, bot):
+        """ Swaps all the tiles of a bot hand.
+
+            Args:
+                bot(:obj:'Bot'): Bot with a hand of tiles.
+
+        """
+        tiles_to_swapp = len(bot.hand)
+        for tile in bot.hand:
+            self.tiles.append(tile)
+        random.shuffle(self.tiles)
+        bot.hand = []
+        bot.draw_tiles(self)
 
 
     def is_empty(self):

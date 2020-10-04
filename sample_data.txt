@@ -11,9 +11,9 @@ Board and moves configuration to test bots decision making
                        [0, b_sqr, 0, 0, 0, 0, 0, 0],
                        [0, 0, 0, 0, 0, 0, 0, 0]]
         board = Board(board_state)
-	turn_steps = TurnSteps()
-        turn_steps.tiles = [b_crc, r_crc]
-        turn_steps.positions = [Position(3, 4), Position(4, 4)]
+	    tile_combo = TileCombo()
+        tile_combo.tiles = [b_crc, r_crc]
+        tile_combo.positions = [Position(3, 4), Position(4, 4)]
 
 # test data for possible lines killed
         board_state = [[0, 0,     0,     0,     0,     0, 0,     0],
@@ -24,6 +24,14 @@ Board and moves configuration to test bots decision making
                        [0, 0,     0,     0,     0,     0, 0,     0],
                        [0, 0,     0,     0,     o_crc, 0, 0,     0]]
         board_object = Board(board_state)
-        turn_steps = TurnSteps()
-        turn_steps.tiles = [b_crc, r_crc]
-        turn_steps.positions = [Position(3, 4), Position(4, 4)]
+        tile_combo = TileCombo()
+        tile_combo.tiles = [b_crc, r_crc]
+        tile_combo.positions = [Position(3, 4), Position(4, 4)]
+
+# test data for best points combo
+    board = Board([[0, 0,     0,     0, 0],
+               [0, 0,     r_crc, 0, 0],
+               [0, b_sqr, b_crc, 0, 0],
+               [0, 0,     0,     0, 0],
+               [0, 0,     0,     0, 0]])
+    bot.hand = [r_sqr, o_crc]

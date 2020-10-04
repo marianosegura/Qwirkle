@@ -1,12 +1,11 @@
 
 class TileCombo:
     """ Tile moves done by a player in its turn. Keeps track
-        of a list of tiles, played positions and points.
+        of a list of tiles, played positions.
 
         Attributes:
             tiles(:obj:`list` of :obj:`Tile`): List of played tiles.
             positions(:obj:`list` of :obj:`Position`): List of played positions.
-            points(int): Play total points.
 
     """
 
@@ -16,7 +15,6 @@ class TileCombo:
         """
         self.tiles = []
         self.positions = []
-        self.points = 0
 
 
     def add_move(self, tile, position):
@@ -46,7 +44,6 @@ class TileCombo:
         copy = TileCombo()
         copy.tiles.extend(self.tiles)
         copy.positions.extend(self.positions)
-        copy.points = self.points
         return copy
 
 
