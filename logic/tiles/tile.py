@@ -1,5 +1,5 @@
-from shape import Shape
-from color import Color
+from logic.tiles.shape import Shape
+from logic.tiles.color import Color
 
 class Tile:
     """ Qwirkle tile piece, with shape and color.

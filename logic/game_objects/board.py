@@ -1,5 +1,4 @@
-from position import Position
-from restriction_tile import TileRestriction
+from logic.combos.position import Position
 
 
 class Board:

@@ -1,10 +1,10 @@
-from board import Board
-from smarter_bot import SmarterBot
-from bot import Bot
-from bag import Bag
-from time import perf_counter
+from logic.game_objects.board import Board
+from logic.bots.bot import Bot
+from logic.bots.smarter_bot import SmarterBot
+from logic.game_objects.bag import Bag
+#from time import perf_counter
 
-total_games = 100
+total_games = 1
 
 points_bot_advantage = 0
 smart_bot_advantage = 0
@@ -43,7 +43,7 @@ for i in range(total_games):
                 #  print(bot)
                 #  print(combo)
                 #  print(len(bag), " tiles left")
-                #print(board)
+                print(board)
                 bot.remove_tiles_from_hand(combo.tiles)
                 bot.draw_tiles(bag)
             else:

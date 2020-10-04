@@ -1,6 +1,6 @@
-from color import Color
-from shape import Shape
-from tile import Tile
+from logic.tiles.color import Color
+from logic.tiles.shape import Shape
+from logic.tiles.tile import Tile
 import random
 
 class Bag:

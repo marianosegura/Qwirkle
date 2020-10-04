@@ -1,4 +1,5 @@
-from bot import Bot
+from logic.bots.bot import Bot
+
 
 class SmarterBot(Bot):
     """ Smart bot that take into account combo points, qwirkle chances caused and

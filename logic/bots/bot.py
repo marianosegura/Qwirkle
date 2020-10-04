@@ -1,6 +1,7 @@
-from position import Position
-from restriction_tile import TileRestriction
-from tile_combo import TileCombo
+
+from logic.combos.position import Position
+from logic.combos.restriction_tile import  TileRestriction
+from logic.combos.tile_combo import TileCombo
 
 class Bot:
     """ Simple bot that plays the move that produces the most points
